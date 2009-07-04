@@ -304,12 +304,21 @@ class MainWindow(QMainWindow, fatture_ui.Ui_MainWindow):
         self.connect(self.action_Load_File, SIGNAL("triggered()"),
                     self.openFile)
 
-    #~ def editEsc(self, idxcur, idxold):
-        #~ if self.editindex and self.editindex.isValid():
-            #~ print(idxcur.row(), idxold.row(), self.editindex.row())
-            #~ if idxcur.row() != self.editindex.row():
-                #~ #self.sModel.submitAll()
-                #~ self.editindex = None
+        # Edit customers
+        self.connect(self.action_Add_Customers, SIGNAL("triggered()"),
+                    self.editCustomers)
+
+
+    def editCustomers(self):
+        relpath = os.path.dirname(__file__)
+        if relpath:
+            relpath = "%s/" % relpath
+        subprocess.call(['python',os.path.join("%s../clienti/" %
+                                        relpath, "clienti.py")])
+        self.setupModels()
+        self.setupMappers()
+        self.setupTables()
+        self.mmUpdate()
 
     def showAboutBox(self):
         dlg = aboutfatt.AboutBox(self)
@@ -486,34 +495,12 @@ class MainWindow(QMainWindow, fatture_ui.Ui_MainWindow):
         # setup masterModel
         self.mModel = QSqlRelationalTableModel(self)
         self.mModel.setTable(QString("fattmaster"))
-        #~ self.mModel.setHeaderData(MID, Qt.Horizontal, QVariant("ID"))
-        #~ self.mModel.setHeaderData(MDATA, Qt.Horizontal, QVariant("Data"))
-        #~ self.mModel.setHeaderData(MDOC, Qt.Horizontal, QVariant("Numero Fatt."))
-        #~ self.mModel.setHeaderData(MIDTDOC, Qt.Horizontal, QVariant("Tipo Fatt."))
-        #~ self.mModel.setHeaderData(MIDCLI, Qt.Horizontal, QVariant("Cliente"))
-        #~ self.mModel.setHeaderData(MPAG, Qt.Horizontal, QVariant("Pagamento"))
-        #~ self.mModel.setHeaderData(MCAU, Qt.Horizontal, QVariant("Causale"))
-        #~ self.mModel.setHeaderData(MNOTE, Qt.Horizontal, QVariant("Note"))
         self.mModel.setSort(MDATA, Qt.AscendingOrder)
         self.mModel.setRelation(MIDCLI, QSqlRelation("clienti",
                                             "id", "ragsoc"))
         self.mModel.setRelation(MIDTDOC, QSqlRelation("tipofatt",
                                             "id", "tfatt"))
         self.mModel.select()
-
-        # setup clientiModel
-        self.cModel = QSqlTableModel(self)
-        self.cModel.setTable(QString("clienti"))
-        #~ self.cModel.setHeaderData(CID, Qt.Horizontal, QVariant("ID"))
-        #~ self.cModel.setHeaderData(CRAGSOC, Qt.Horizontal, QVariant("RagSoc"))
-        #~ self.cModel.setHeaderData(CIND, Qt.Horizontal, QVariant("Indirizzo"))
-        #~ self.cModel.setHeaderData(CPIVA, Qt.Horizontal, QVariant("PIva"))
-        #~ self.cModel.setHeaderData(CCF, Qt.Horizontal, QVariant("CF"))
-        #~ self.cModel.setHeaderData(CTEL, Qt.Horizontal, QVariant("Tel"))
-        #~ self.cModel.setHeaderData(CFAX, Qt.Horizontal, QVariant("Fax"))
-        #~ self.cModel.setHeaderData(CCELL, Qt.Horizontal, QVariant("Cell"))
-        #~ self.cModel.setHeaderData(CEMAIL, Qt.Horizontal, QVariant("EMail"))
-        self.cModel.select()
 
     def setupMappers(self):
         '''
@@ -527,11 +514,15 @@ class MainWindow(QMainWindow, fatture_ui.Ui_MainWindow):
         self.mapper.addMapping(self.fattLineEdit, MDOC)
 
         relationModel = self.mModel.relationModel(MIDTDOC)
+        relationModel.setSort(1, Qt.AscendingOrder)
+        relationModel.select()
         self.tipoFattComboBox.setModel(relationModel)
         self.tipoFattComboBox.setModelColumn(relationModel.fieldIndex("tfatt"))
         self.mapper.addMapping(self.tipoFattComboBox, MIDTDOC)
 
         relationModel = self.mModel.relationModel(MIDCLI)
+        relationModel.setSort(CRAGSOC, Qt.AscendingOrder)
+        relationModel.select()
         self.cliComboBox.setModel(relationModel)
         self.cliComboBox.setModelColumn(relationModel.fieldIndex("ragsoc"))
         self.mapper.addMapping(self.cliComboBox, MIDCLI)
@@ -807,7 +798,7 @@ class MainWindow(QMainWindow, fatture_ui.Ui_MainWindow):
 
             doc.build(Elements,onFirstPage=myLaterPages,onLaterPages=myLaterPages)
 
-            subprocess.call(['gnome-open',os.path.join(os.path.dirname(__file__),
+            subprocess.Popen(['gnome-open',os.path.join(os.path.dirname(__file__),
                             "fatt%s.%s.pdf" % (numdoc, copia.replace(" ",".")))])
 
         if self.copiaCliCheckBox.isChecked():
