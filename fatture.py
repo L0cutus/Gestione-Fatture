@@ -613,13 +613,13 @@ class MainWindow(QMainWindow, fatture_ui.Ui_MainWindow):
             masterid = currec.value("id").toInt()[0]
 
             qmaster.exec_("SELECT id,data,doc,idtdoc,idcli,causale,note "
-                        "FROM fattmaster WHERE doc = %s" % (currec.value("doc").toString()))
+                        "FROM fattmaster WHERE doc = '%s'" % (currec.value("doc").toString()))
             qmaster.next()
             curcli = qmaster.value(4).toInt()[0]
             qcli.exec_("SELECT id,ragsoc,indirizzo,piva "
                         "FROM clienti WHERE id = %d" % (curcli))
             qslave.exec_("SELECT mmid,qt,desc,imp,iva "
-                            "FROM fattslave WHERE mmid = %s" % (masterid))
+                            "FROM fattslave WHERE mmid = '%s'" % (masterid))
 
             qcli.next()
             # variabili utili alla stampa del report
